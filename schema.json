@@ -1,0 +1,30 @@
+{
+  "libraries": {
+    "transaction": true,
+    "partition-key": [
+      "library_id"
+    ],
+    "columns": {
+      "library_id": "INT",
+      "library_name": "TEXT",
+      "return_delay": "INT",
+    }
+  },
+  "books": {
+    "transaction": true,
+    "partition-key": [
+      "book_name"
+    ],
+    "clustering-key": [
+      "library_id"
+    ],
+    "columns": {
+      "book_name": "TEXT",
+      "library_id": "INT",
+      "author": "TEXT",
+      "chapter": "INT",
+      "genre": "TEXT",
+      "qty_available": "INT"
+    }
+  }
+}
