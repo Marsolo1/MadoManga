@@ -1,5 +1,5 @@
 {
-  "madomanga.libraries": {
+  "libraries.libraries": {
     "transaction": true,
     "partition-key": [
       "library_id"
@@ -10,7 +10,7 @@
       "return_delay": "INT"
     }
   },
-  "madomanga.books": {
+  "libraries.books": {
     "transaction": true,
     "partition-key": [
       "book_name"
@@ -27,7 +27,7 @@
       "qty_available": "INT"
     }
   },
-  "madomanga.loans": {
+  "libraries.loans": {
     "transaction": true,
     "partition-key": [
       "user_id"
@@ -44,7 +44,7 @@
       "loaned": "BOOLEAN"
     }
   },
-  "madomanga.users": {
+  "users.users": {
     "transaction": true,
     "partition-key": [
       "user_id"
