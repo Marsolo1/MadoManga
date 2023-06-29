@@ -1,0 +1,24 @@
+Biblios:
+    P ID biblio (int)
+    Nom (String)
+    Délai retour (int)
+
+Livres d'une biblio:
+    P Nom (String)
+    C ID biblio (int)
+    Auteur (String)
+    Numéro chapitre (int)
+    Genre (String)
+    Qtée dispo (int)
+
+Emprunts:
+    P ID utilisateur (int)
+    C ID emprunt (int)
+    Date début (String)
+    Date limite (String)
+    Date retour (String)
+    En cours (bool)
+
+Utilisateurs:
+    P ID utilisateur (int)
+    Nom utilisateur (String)
