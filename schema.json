@@ -1,5 +1,5 @@
 {
-  "libraries": {
+  "madomanga.libraries": {
     "transaction": true,
     "partition-key": [
       "library_id"
@@ -7,10 +7,10 @@
     "columns": {
       "library_id": "INT",
       "library_name": "TEXT",
-      "return_delay": "INT",
+      "return_delay": "INT"
     }
   },
-  "books": {
+  "madomanga.books": {
     "transaction": true,
     "partition-key": [
       "book_name"
@@ -25,6 +25,33 @@
       "chapter": "INT",
       "genre": "TEXT",
       "qty_available": "INT"
+    }
+  },
+  "madomanga.loans": {
+    "transaction": true,
+    "partition-key": [
+      "user_id"
+    ],
+    "clustering-key": [
+      "loan_id"
+    ],
+    "columns": {
+      "user_id": "INT",
+      "loan_id": "INT",
+      "start_date": "TEXT",
+      "limit_date": "TEXT",
+      "return_date": "TEXT",
+      "loaned": "BOOLEAN"
+    }
+  },
+  "madomanga.users": {
+    "transaction": true,
+    "partition-key": [
+      "user_id"
+    ],
+    "columns": {
+      "user_id": "INT",
+      "user_name": "TEXT"
     }
   }
 }
