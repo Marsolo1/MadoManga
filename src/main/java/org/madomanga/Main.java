@@ -19,5 +19,6 @@ public class Main {
         db.create_book("Vagabond", 1, "Takehiko Inoue", 300, "Seinen", 100);
         db.create_book("Gantz", 1, "Hiroya Oku", 300, "Seinen", 100);
         db.create_book("Monster", 1, "Naoki Urasawa", 200, "Seinen", 100);
+        db.close();
     }
 }

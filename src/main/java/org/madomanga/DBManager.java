@@ -22,6 +22,10 @@ public class DBManager {
 
     private final DistributedTransactionManager manager;
 
+    public void close() {
+        manager.close();
+    }
+
     public DBManager(String scalarDBProperties) throws IOException {
         TransactionFactory factory = TransactionFactory.create(scalarDBProperties);
         manager = factory.getTransactionManager();
@@ -57,7 +61,7 @@ public class DBManager {
         }
     }
 
-    public int create_book(String name, int library_id, String author, int chapter, String genre, int qty)
+    public void create_book(String name, int library_id, String author, int chapter, String genre, int qty)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
@@ -65,7 +69,7 @@ public class DBManager {
                     .namespace(LIB_NAMESPACE)
                     .table(BOOKS_TABLE)
                     .partitionKey(Key.ofText("book_name", name))
-                    .intValue("library_id", name)
+                    .clusteringKey(Key.ofInt("library_id", library_id))
                     .textValue("author", author)
                     .intValue("chapter", chapter)
                     .textValue("genre", genre)
@@ -73,15 +77,14 @@ public class DBManager {
                     .build());
 
             tx.commit();
-            return id;
         } catch (Exception e) {
             tx.abort();
             throw e;
         }
     }
 
-    public int create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
-            bool loaned)
+    public void create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
+            boolean loaned)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
@@ -93,11 +96,10 @@ public class DBManager {
                     .textValue("start_date", start_date)
                     .textValue("limit_date", limit_date)
                     .textValue("return_date", return_date)
-                    .boolValue("loaned", loaned)
+                    .booleanValue("loaned", loaned)
                     .build());
 
             tx.commit();
-            return id;
         } catch (Exception e) {
             tx.abort();
             throw e;
