@@ -128,16 +128,27 @@ public class DBManager {
         }
     }
 
-    public void create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
+    public int create_loan(int user_id, String start_date, String limit_date, String return_date,
             boolean loaned)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(LOANS_TABLE)
+                    .all()
+                    .projection("loan_id")
+                    .build());
+
+            int id = res.stream()
+                    .mapToInt(record -> record.getInt("loan_id"))
+                    .max().orElse(-1) + 1;
+
             tx.put(Put.newBuilder()
                     .namespace(LIB_NAMESPACE)
                     .table(LOANS_TABLE)
                     .partitionKey(Key.ofInt("user_id", user_id))
-                    .intValue("loan_id", loan_id)
+                    .clusteringKey(Key.ofInt("loan_id", id))
                     .textValue("start_date", start_date)
                     .textValue("limit_date", limit_date)
                     .textValue("return_date", return_date)
@@ -145,6 +156,37 @@ public class DBManager {
                     .build());
 
             tx.commit();
+            return id;
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
+    public int create_user(String name)
+            throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(USER_NAMESPACE)
+                    .table(USERS_TABLE)
+                    .all()
+                    .projection("user_id")
+                    .build());
+
+            int id = res.stream()
+                    .mapToInt(record -> record.getInt("user_id"))
+                    .max().orElse(-1) + 1;
+
+            tx.put(Put.newBuilder()
+                    .namespace(USER_NAMESPACE)
+                    .table(USERS_TABLE)
+                    .partitionKey(Key.ofInt("user_id", id))
+                    .textValue("user_name", name)
+                    .build());
+
+            tx.commit();
+            return id;
         } catch (Exception e) {
             tx.abort();
             throw e;

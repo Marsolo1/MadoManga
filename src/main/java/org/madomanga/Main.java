@@ -19,6 +19,9 @@ public class Main {
         db.create_book("Vagabond", 1, "Takehiko Inoue", 300, "Seinen", 100);
         db.create_book("Gantz", 1, "Hiroya Oku", 300, "Seinen", 100);
         db.create_book("Monster", 1, "Naoki Urasawa", 200, "Seinen", 100);*/
+
+        /*db.create_user("Martial");
+        db.create_loan(0, "blabla","e", "b", true);*/
         for (String s : db.getBooks())
             System.out.println(s);
         db.close();
