@@ -39,7 +39,7 @@ public class DBManager {
 
             int id = res.stream()
                     .mapToInt(record -> record.getInt("library_id"))
-                    .max().orElse(-1)+1;
+                    .max().orElse(-1) + 1;
 
             tx.put(Put.newBuilder()
                     .namespace(LIB_NAMESPACE)
@@ -47,6 +47,29 @@ public class DBManager {
                     .partitionKey(Key.ofInt("library_id", id))
                     .textValue("library_name", name)
                     .intValue("return_delay", returnDelay)
+                    .build());
+
+            tx.commit();
+            return id;
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
+    public int create_book(String name, int library_id, String author, int chapter, String genre, int qty)
+            throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            tx.put(Put.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_TABLE)
+                    .partitionKey(Key.ofText("book_name", name))
+                    .intValue("library_id", name)
+                    .textValue("author", author)
+                    .intValue("chapter", chapter)
+                    .textValue("genre", genre)
+                    .intValue("qty_available", qty)
                     .build());
 
             tx.commit();
