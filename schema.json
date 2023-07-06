@@ -16,7 +16,8 @@
       "book_name"
     ],
     "clustering-key": [
-      "library_id"
+      "library_id",
+      "chapter"
     ],
     "columns": {
       "book_name": "TEXT",

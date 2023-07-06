@@ -69,9 +69,8 @@ public class DBManager {
                     .namespace(LIB_NAMESPACE)
                     .table(BOOKS_TABLE)
                     .partitionKey(Key.ofText("book_name", name))
-                    .clusteringKey(Key.ofInt("library_id", library_id))
+                    .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
                     .textValue("author", author)
-                    .intValue("chapter", chapter)
                     .textValue("genre", genre)
                     .intValue("qty_available", qty)
                     .build());
@@ -81,6 +80,29 @@ public class DBManager {
             tx.abort();
             throw e;
         }
+    }
+
+    public List<String> getBooks() throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_TABLE)
+                    .all()
+                    .projection("book_name")
+                    .build());
+
+            List<String> resStr = res.stream()
+                    .map(record -> record.getText("book_name"))
+                    .toList();
+
+            tx.commit();
+            return resStr;
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+
     }
 
     public void create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
