@@ -8,6 +8,8 @@ import com.scalar.db.service.TransactionFactory;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
 
@@ -102,7 +104,28 @@ public class DBManager {
             tx.abort();
             throw e;
         }
+    }
 
+    // Gives a map, with the library ID as a key, and a map of (chapter, number of books available) as a value
+    public Map<Integer, Map<Integer,Integer>> getBookAvailability(String bookName) throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_TABLE)
+                    .partitionKey(Key.ofText("book_name", bookName))
+                    .projections("library_id", "chapter", "qty_available")
+                    .build());
+
+            Map<Integer, Map<Integer,Integer>> resMap = res.stream()
+                    .collect(Collectors.groupingBy(key -> key.getInt("library_id"), Collectors.toMap(key -> key.getInt("chapter"), key-> key.getInt("qty_available"))));
+
+            tx.commit();
+            return resMap;
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
     }
 
     public void create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
