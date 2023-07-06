@@ -79,4 +79,28 @@ public class DBManager {
             throw e;
         }
     }
+
+    public int create_loan(int user_id, int loan_id, String start_date, String limit_date, String return_date,
+            bool loaned)
+            throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            tx.put(Put.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(LOANS_TABLE)
+                    .partitionKey(Key.ofInt("user_id", user_id))
+                    .intValue("loan_id", loan_id)
+                    .textValue("start_date", start_date)
+                    .textValue("limit_date", limit_date)
+                    .textValue("return_date", return_date)
+                    .boolValue("loaned", loaned)
+                    .build());
+
+            tx.commit();
+            return id;
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
 }
