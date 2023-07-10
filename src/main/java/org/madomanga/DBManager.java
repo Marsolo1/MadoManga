@@ -95,8 +95,8 @@ public class DBManager {
         DistributedTransaction tx = manager.start();
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
-                    .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_AVAILABLE)
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
                     .all()
                     .projection("book_name")
                     .build());
