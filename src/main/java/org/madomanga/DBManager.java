@@ -1,6 +1,7 @@
 package org.madomanga;
 
 import com.scalar.db.api.*;
+import com.scalar.db.exception.transaction.PreparationException;
 import com.scalar.db.exception.transaction.TransactionException;
 import com.scalar.db.io.Key;
 import com.scalar.db.service.TransactionFactory;
@@ -28,6 +29,15 @@ public class DBManager {
             String author,
             String genre,
             String summary
+    ){}
+
+    public record LoanData(
+            int user_id,
+            int loan_id,
+            String start_date,
+            String limit_date,
+            String return_date,
+            boolean loaned
     ){}
 
     private final DistributedTransactionManager manager;
@@ -170,6 +180,56 @@ public class DBManager {
         }
     }
 
+    public void end_loan(int user_id, int loan_id, String return_date) throws Exception {
+        DistributedTransaction tx = manager.start();
+        try {
+            Optional<Result> loan = tx.get(
+                    Get.newBuilder()
+                            .namespace(LIB_NAMESPACE)
+                            .table(LOANS_TABLE)
+                            .partitionKey(Key.ofInt("user_id", user_id))
+                            .clusteringKey(Key.ofInt("load_id", loan_id))
+                            .build());
+
+            if (loan.isEmpty()) throw new Exception("Loan not found: "+loan_id);
+
+            tx.put(Put.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(LOANS_TABLE)
+                    .partitionKey(Key.ofInt("user_id", user_id))
+                    .clusteringKey(Key.ofInt("loan_id", loan_id))
+                    .textValue("return_date", return_date)
+                    .booleanValue("loaned", false)
+                    .build());
+
+            Optional<Result> book = tx.get(
+                    Get.newBuilder()
+                            .namespace(LIB_NAMESPACE)
+                            .table(BOOKS_AVAILABLE)
+                            .partitionKey(Key.ofText("book_name", loan.get().getText("book_name")))
+                            .clusteringKey(Key.ofInt("library_id", loan.get().getInt("library_id")))
+                            .clusteringKey(Key.ofInt("chapter", loan.get().getInt("chapter")))
+                            .build());
+            int q = 0;
+            if (book.isPresent())
+                q = book.get().getInt("qty_available");
+
+            tx.put(Put.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_AVAILABLE)
+                    .partitionKey(Key.ofText("book_name", loan.get().getText("book_name")))
+                    .clusteringKey(Key.ofInt("library_id", loan.get().getInt("library_id")))
+                    .clusteringKey(Key.ofInt("chapter", loan.get().getInt("chapter")))
+                    .intValue("qty_available", q+1)
+                    .build());
+
+            tx.commit();
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
     public int create_user(String name)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
@@ -214,6 +274,35 @@ public class DBManager {
 
             return res.map(result -> new BookData(result.getText("book_name"), result.getText("author"), result.getText("genre"), result.getText("summary"))).orElse(null);
 
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
+    public List<LoanData> getLoans() throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
+                    .all()
+                    .projection("book_name")
+                    .build());
+
+            List<LoanData> resList = res.stream()
+                    .map(record -> new LoanData(
+                            record.getInt("user_id"),
+                            record.getInt("loan_id"),
+                            record.getText("start_date"),
+                            record.getText("limit_date"),
+                            record.getText("return_date"),
+                            record.getBoolean("loaned")
+                    ))
+                    .toList();
+
+            tx.commit();
+            return resList;
         } catch (Exception e) {
             tx.abort();
             throw e;
