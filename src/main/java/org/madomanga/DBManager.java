@@ -213,7 +213,7 @@ public class DBManager {
                             .namespace(LIB_NAMESPACE)
                             .table(LOANS_TABLE)
                             .partitionKey(Key.ofInt("user_id", user_id))
-                            .clusteringKey(Key.ofInt("load_id", loan_id))
+                            .clusteringKey(Key.ofInt("loan_id", loan_id))
                             .build());
 
             if (loan.isEmpty()) throw new Exception("Loan not found: "+loan_id);
@@ -232,8 +232,7 @@ public class DBManager {
                             .namespace(LIB_NAMESPACE)
                             .table(BOOKS_AVAILABLE)
                             .partitionKey(Key.ofText("book_name", loan.get().getText("book_name")))
-                            .clusteringKey(Key.ofInt("library_id", loan.get().getInt("library_id")))
-                            .clusteringKey(Key.ofInt("chapter", loan.get().getInt("chapter")))
+                            .clusteringKey(Key.of("library_id", loan.get().getInt("library_id"), "chapter", loan.get().getInt("chapter") ))
                             .build());
             int q = 0;
             if (book.isPresent())
@@ -243,8 +242,7 @@ public class DBManager {
                     .namespace(LIB_NAMESPACE)
                     .table(BOOKS_AVAILABLE)
                     .partitionKey(Key.ofText("book_name", loan.get().getText("book_name")))
-                    .clusteringKey(Key.ofInt("library_id", loan.get().getInt("library_id")))
-                    .clusteringKey(Key.ofInt("chapter", loan.get().getInt("chapter")))
+                    .clusteringKey(Key.of("library_id", loan.get().getInt("library_id"), "chapter", loan.get().getInt("chapter")))
                     .intValue("qty_available", q+1)
                     .build());
 
