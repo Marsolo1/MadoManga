@@ -71,18 +71,17 @@ public class DBManager {
         }
     }
 
-    public void create_book(String name, int library_id, String author, int chapter, String genre, int qty)
+    public void create_book(BookData bookData)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
             tx.put(Put.newBuilder()
-                    .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_AVAILABLE)
-                    .partitionKey(Key.ofText("book_name", name))
-                    .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
-                    .textValue("author", author)
-                    .textValue("genre", genre)
-                    .intValue("qty_available", qty)
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
+                    .partitionKey(Key.ofText("book_name", bookData.name))
+                    .textValue("author", bookData.author)
+                    .textValue("genre", bookData.genre)
+                    .textValue("summary", bookData.summary)
                     .build());
 
             tx.commit();
