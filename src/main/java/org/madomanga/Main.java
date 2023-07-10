@@ -9,7 +9,7 @@ public class Main {
     public static void main(String[] args) throws IOException, TransactionException {
         final String scalarDBProperties = System.getProperty("user.dir") + File.separator + "scalardb.properties";
         DBManager db = new DBManager(scalarDBProperties);
-        /*db.create_library("Animate", 10);
+        db.create_library("Animate", 10);
         db.create_book("One Piece", 1, "Eiichiro Oda", 1000, "Shonen", 100);
         db.create_book("Naruto", 1, "Masashi Kishimoto", 700, "Shonen", 100);
         db.create_book("Bleach", 1, "Tite Kubo", 700, "Shonen", 100);
@@ -18,10 +18,11 @@ public class Main {
         db.create_book("Berserk", 1, "Kentaro Miura", 400, "Seinen", 100);
         db.create_book("Vagabond", 1, "Takehiko Inoue", 300, "Seinen", 100);
         db.create_book("Gantz", 1, "Hiroya Oku", 300, "Seinen", 100);
-        db.create_book("Monster", 1, "Naoki Urasawa", 200, "Seinen", 100);*/
+        db.create_book("Monster", 1, "Naoki Urasawa", 200, "Seinen", 100);
 
-        /*db.create_user("Martial");
-        db.create_loan(0, "blabla","e", "b", true);*/
+        db.create_user("Martial");
+        db.add_books_available(0, "Berserk", 400, 5);
+        db.create_loan(0, 0,"Berserk", 400, "2023-01-01", "2023-03-01");
         for (String s : db.getBooks())
             System.out.println(s);
         db.close();

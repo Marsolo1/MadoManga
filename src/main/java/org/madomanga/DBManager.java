@@ -28,8 +28,8 @@ public class DBManager {
             String name,
             String author,
             String genre,
-            String summary
-    ){}
+            String summary) {
+    }
 
     public record LoanData(
             int user_id,
@@ -123,8 +123,9 @@ public class DBManager {
         }
     }
 
-    // Gives a map, with the library ID as a key, and a map of (chapter, number of books available) as a value
-    public Map<Integer, Map<Integer,Integer>> getBookAvailability(String bookName) throws TransactionException {
+    // Gives a map, with the library ID as a key, and a map of (chapter, number of
+    // books available) as a value
+    public Map<Integer, Map<Integer, Integer>> getBookAvailability(String bookName) throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
@@ -134,8 +135,9 @@ public class DBManager {
                     .projections("library_id", "chapter", "qty_available")
                     .build());
 
-            Map<Integer, Map<Integer,Integer>> resMap = res.stream()
-                    .collect(Collectors.groupingBy(key -> key.getInt("library_id"), Collectors.toMap(key -> key.getInt("chapter"), key-> key.getInt("qty_available"))));
+            Map<Integer, Map<Integer, Integer>> resMap = res.stream()
+                    .collect(Collectors.groupingBy(key -> key.getInt("library_id"),
+                            Collectors.toMap(key -> key.getInt("chapter"), key -> key.getInt("qty_available"))));
 
             tx.commit();
             return resMap;
@@ -145,8 +147,8 @@ public class DBManager {
         }
     }
 
-    public int create_loan(int user_id, String start_date, String limit_date, String return_date,
-            boolean loaned)
+    public int create_loan(int user_id, int library_id, String name, int chapter, String start_date,
+            String limit_date)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
@@ -166,11 +168,34 @@ public class DBManager {
                     .table(LOANS_TABLE)
                     .partitionKey(Key.ofInt("user_id", user_id))
                     .clusteringKey(Key.ofInt("loan_id", id))
+                    .intValue("library_id", library_id)
+                    .textValue("book_name", name)
+                    .intValue("chapter", chapter)
                     .textValue("start_date", start_date)
                     .textValue("limit_date", limit_date)
-                    .textValue("return_date", return_date)
-                    .booleanValue("loaned", loaned)
+                    .textValue("return_date", null)
+                    .booleanValue("loaned", true)
                     .build());
+
+            Optional<Result> resBook = tx.get(Get.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_AVAILABLE)
+                    .partitionKey(Key.ofText("book_name", name))
+                    .clusteringKey(Key.ofInt("chapter", chapter))
+                    .clusteringKey(Key.ofInt("library_id", id))
+                    .build());
+
+            if (resBook.isPresent()) {
+                int qty = resBook.get().getInt("qty_available");
+                tx.put(Put.newBuilder()
+                        .namespace(LIB_NAMESPACE)
+                        .table(BOOKS_AVAILABLE)
+                        .partitionKey(Key.ofText("book_name", name))
+                        .clusteringKey(Key.ofInt("chapter", chapter))
+                        .clusteringKey(Key.ofInt("library_id", id))
+                        .intValue("qty_available", qty - 1)
+                        .build());
+            }
 
             tx.commit();
             return id;
@@ -260,19 +285,39 @@ public class DBManager {
         }
     }
 
+    public void add_books_available(int library_id, String name, int chapter, int qty)
+            throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            tx.put(Put.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_AVAILABLE)
+                    .partitionKey(Key.ofText("book_name", name))
+                    .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
+                    .intValue("qty_available", qty)
+                    .build());
+
+            tx.commit();
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
     public BookData getBookData(String book_name) throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
             Optional<Result> res = tx.get(
                     Get.newBuilder()
-                    .namespace(USER_NAMESPACE)
-                    .table(BOOKS_LIST)
-                    .partitionKey(Key.ofText("book_name", book_name))
-                    .build());
+                            .namespace(USER_NAMESPACE)
+                            .table(BOOKS_LIST)
+                            .partitionKey(Key.ofText("book_name", book_name))
+                            .build());
 
             tx.commit();
 
-            return res.map(result -> new BookData(result.getText("book_name"), result.getText("author"), result.getText("genre"), result.getText("summary"))).orElse(null);
+            return res.map(result -> new BookData(result.getText("book_name"), result.getText("author"),
+                    result.getText("genre"), result.getText("summary"))).orElse(null);
 
         } catch (Exception e) {
             tx.abort();
