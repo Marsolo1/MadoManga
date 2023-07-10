@@ -23,6 +23,13 @@ public class DBManager {
     private static final String LOANS_TABLE = "loans";
     private static final String USERS_TABLE = "users";
 
+    public record BookData(
+            String name,
+            String author,
+            String genre,
+            String summary) {
+    }
+
     private final DistributedTransactionManager manager;
 
     public void close() {
@@ -64,18 +71,17 @@ public class DBManager {
         }
     }
 
-    public void create_book(String name, int library_id, String author, int chapter, String genre, int qty)
+    public void create_book(BookData bookData)
             throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
             tx.put(Put.newBuilder()
-                    .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_AVAILABLE)
-                    .partitionKey(Key.ofText("book_name", name))
-                    .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
-                    .textValue("author", author)
-                    .textValue("genre", genre)
-                    .intValue("qty_available", qty)
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
+                    .partitionKey(Key.ofText("book_name", bookData.name))
+                    .textValue("author", bookData.author)
+                    .textValue("genre", bookData.genre)
+                    .textValue("summary", bookData.summary)
                     .build());
 
             tx.commit();
@@ -89,8 +95,8 @@ public class DBManager {
         DistributedTransaction tx = manager.start();
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
-                    .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_AVAILABLE)
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
                     .all()
                     .projection("book_name")
                     .build());
@@ -181,7 +187,6 @@ public class DBManager {
                         .build());
             }
 
-
             tx.commit();
             return id;
         } catch (Exception e) {
@@ -233,6 +238,27 @@ public class DBManager {
                     .build());
 
             tx.commit();
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
+    public BookData getBookData(String book_name) throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            Optional<Result> res = tx.get(
+                    Get.newBuilder()
+                            .namespace(USER_NAMESPACE)
+                            .table(BOOKS_LIST)
+                            .partitionKey(Key.ofText("book_name", book_name))
+                            .build());
+
+            tx.commit();
+
+            return res.map(result -> new BookData(result.getText("book_name"), result.getText("author"),
+                    result.getText("genre"), result.getText("summary"))).orElse(null);
+
         } catch (Exception e) {
             tx.abort();
             throw e;
