@@ -188,11 +188,12 @@ public class DBManager {
 
             if (resBook.isPresent()) {
                 int qty = resBook.get().getInt("qty_available");
+                if (qty == 0) throw new Exception("No books available: " + name + " " + chapter + " " + library_id);
                 tx.put(Put.newBuilder()
                         .namespace(LIB_NAMESPACE)
                         .table(BOOKS_AVAILABLE)
                         .partitionKey(Key.ofText("book_name", name))
-                        .clusteringKey(Key.of("library_id", id, "chapter", chapter))
+                        .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
                         .intValue("qty_available", qty - 1)
                         .build());
             }
