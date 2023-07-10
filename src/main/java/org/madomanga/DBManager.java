@@ -8,6 +8,7 @@ import com.scalar.db.service.TransactionFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.stream;
@@ -21,6 +22,13 @@ public class DBManager {
     private static final String BOOKS_LIST = "books";
     private static final String LOANS_TABLE = "loans";
     private static final String USERS_TABLE = "users";
+
+    public record BookData(
+            String name,
+            String author,
+            String genre,
+            String summary
+    ){};
 
     private final DistributedTransactionManager manager;
 
@@ -192,4 +200,26 @@ public class DBManager {
             throw e;
         }
     }
+
+    public BookData getBookData(String book_name) throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            Optional<Result> res = tx.get(
+                    Get.newBuilder()
+                    .namespace(USER_NAMESPACE)
+                    .table(BOOKS_LIST)
+                    .partitionKey(Key.ofText("book_name", book_name))
+                    .build());
+
+            tx.commit();
+
+            if (res.isEmpty()) return null;
+
+            return new BookData(res.get().getText("book_name"), res.get().getText("author"), res.get().getText("genre"), res.get().getText("summary"));
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
 }
