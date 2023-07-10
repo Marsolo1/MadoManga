@@ -149,7 +149,7 @@ public class DBManager {
 
     public int create_loan(int user_id, int library_id, String name, int chapter, String start_date,
             String limit_date)
-            throws TransactionException {
+            throws Exception {
         DistributedTransaction tx = manager.start();
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
@@ -162,6 +162,13 @@ public class DBManager {
             int id = res.stream()
                     .mapToInt(record -> record.getInt("loan_id"))
                     .max().orElse(-1) + 1;
+
+            Optional<Result> resBook = tx.get(Get.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_AVAILABLE)
+                    .partitionKey(Key.ofText("book_name", name))
+                    .clusteringKey(Key.of("chapter", chapter, "library_id", library_id))
+                    .build());
 
             tx.put(Put.newBuilder()
                     .namespace(LIB_NAMESPACE)
@@ -177,13 +184,7 @@ public class DBManager {
                     .booleanValue("loaned", true)
                     .build());
 
-            Optional<Result> resBook = tx.get(Get.newBuilder()
-                    .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_AVAILABLE)
-                    .partitionKey(Key.ofText("book_name", name))
-                    .clusteringKey(Key.ofInt("chapter", chapter))
-                    .clusteringKey(Key.ofInt("library_id", id))
-                    .build());
+            if (resBook.isEmpty()) throw new Exception("Book not found: " + name + " " + chapter + " " + library_id);
 
             if (resBook.isPresent()) {
                 int qty = resBook.get().getInt("qty_available");
@@ -191,8 +192,7 @@ public class DBManager {
                         .namespace(LIB_NAMESPACE)
                         .table(BOOKS_AVAILABLE)
                         .partitionKey(Key.ofText("book_name", name))
-                        .clusteringKey(Key.ofInt("chapter", chapter))
-                        .clusteringKey(Key.ofInt("library_id", id))
+                        .clusteringKey(Key.of("library_id", id, "chapter", chapter))
                         .intValue("qty_available", qty - 1)
                         .build());
             }
