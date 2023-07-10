@@ -28,7 +28,7 @@ public class DBManager {
             String author,
             String genre,
             String summary
-    ){};
+    ){}
 
     private final DistributedTransactionManager manager;
 
@@ -213,9 +213,8 @@ public class DBManager {
 
             tx.commit();
 
-            if (res.isEmpty()) return null;
+            return res.map(result -> new BookData(result.getText("book_name"), result.getText("author"), result.getText("genre"), result.getText("summary"))).orElse(null);
 
-            return new BookData(res.get().getText("book_name"), res.get().getText("author"), res.get().getText("genre"), res.get().getText("summary"));
         } catch (Exception e) {
             tx.abort();
             throw e;
