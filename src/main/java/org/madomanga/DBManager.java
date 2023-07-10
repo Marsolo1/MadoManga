@@ -167,7 +167,7 @@ public class DBManager {
                     .namespace(LIB_NAMESPACE)
                     .table(BOOKS_AVAILABLE)
                     .partitionKey(Key.ofText("book_name", name))
-                    .clusteringKey(Key.of("chapter", chapter, "library_id", library_id))
+                    .clusteringKey(Key.of("library_id", library_id, "chapter", chapter ))
                     .build());
 
             tx.put(Put.newBuilder()
@@ -329,10 +329,9 @@ public class DBManager {
         DistributedTransaction tx = manager.start();
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
-                    .namespace(USER_NAMESPACE)
-                    .table(BOOKS_LIST)
+                    .namespace(LIB_NAMESPACE)
+                    .table(LOANS_TABLE)
                     .all()
-                    .projection("book_name")
                     .build());
 
             List<LoanData> resList = res.stream()
