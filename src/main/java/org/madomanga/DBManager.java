@@ -6,7 +6,6 @@ import com.scalar.db.io.Key;
 import com.scalar.db.service.TransactionFactory;
 
 import java.io.IOException;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,7 +17,8 @@ public class DBManager {
     private static final String USER_NAMESPACE = "users";
     private static final String LIB_NAMESPACE = "libraries";
     private static final String LIB_TABLE = "libraries";
-    private static final String BOOKS_TABLE = "books";
+    private static final String BOOKS_AVAILABLE = "books_available";
+    private static final String BOOKS_LIST = "books";
     private static final String LOANS_TABLE = "loans";
     private static final String USERS_TABLE = "users";
 
@@ -69,7 +69,7 @@ public class DBManager {
         try {
             tx.put(Put.newBuilder()
                     .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_TABLE)
+                    .table(BOOKS_AVAILABLE)
                     .partitionKey(Key.ofText("book_name", name))
                     .clusteringKey(Key.of("library_id", library_id, "chapter", chapter))
                     .textValue("author", author)
@@ -89,7 +89,7 @@ public class DBManager {
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
                     .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_TABLE)
+                    .table(BOOKS_AVAILABLE)
                     .all()
                     .projection("book_name")
                     .build());
@@ -112,7 +112,7 @@ public class DBManager {
         try {
             List<Result> res = tx.scan(Scan.newBuilder()
                     .namespace(LIB_NAMESPACE)
-                    .table(BOOKS_TABLE)
+                    .table(BOOKS_AVAILABLE)
                     .partitionKey(Key.ofText("book_name", bookName))
                     .projections("library_id", "chapter", "qty_available")
                     .build());

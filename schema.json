@@ -10,7 +10,7 @@
       "return_delay": "INT"
     }
   },
-  "libraries.books": {
+  "libraries.books_available": {
     "transaction": true,
     "partition-key": [
       "book_name"
@@ -22,9 +22,7 @@
     "columns": {
       "book_name": "TEXT",
       "library_id": "INT",
-      "author": "TEXT",
       "chapter": "INT",
-      "genre": "TEXT",
       "qty_available": "INT"
     }
   },
@@ -53,6 +51,17 @@
     "columns": {
       "user_id": "INT",
       "user_name": "TEXT"
+    }
+  },
+  "users.books": {
+    "partition-key": [
+      "book_name"
+    ],
+    "columns": {
+      "book_name": "TEXT",
+      "author": "TEXT",
+      "genre": "TEXT",
+      "summary": "TEXT"
     }
   }
 }
