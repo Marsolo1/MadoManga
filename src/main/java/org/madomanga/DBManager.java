@@ -352,4 +352,22 @@ public class DBManager {
         }
     }
 
+    public Map<Integer, String> getUsers() throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(USER_NAMESPACE)
+                    .table(USERS_TABLE)
+                    .all()
+                    .build());
+
+            tx.commit();
+            return res.stream()
+                    .collect(Collectors.toMap(key->key.getInt("user_id"), key->key.getText("user_name")));
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
 }
