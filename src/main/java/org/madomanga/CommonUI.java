@@ -129,6 +129,9 @@ public class CommonUI {
     private static class LoanTableModel extends AbstractTableModel {
         private List<DBManager.LoanData> data;
         private LoanColumns[] columns;
+
+        private Map<Integer, String> usernameMap;
+        private Map<Integer, String> libraryMap;
         private static final Map<LoanColumns,String> columnNames = Stream.of(new Object[][]{
                 {LoanColumns.USERNAME, "User"},
                 {LoanColumns.LIBRARY, "Library"},
@@ -140,12 +143,14 @@ public class CommonUI {
                 {LoanColumns.LOAN_STATUS, "Currently loaned"}
         }).collect(Collectors.toMap(data->(LoanColumns)data[0], data->(String)data[1]));
 
-        public LoanTableModel(List<DBManager.LoanData> data) {
-            this(data, new LoanColumns[0]);
+        public LoanTableModel(List<DBManager.LoanData> data, Map<Integer, String> usernameMap, Map<Integer, String> libraryMap) {
+            this(data, usernameMap, libraryMap, new LoanColumns[0]);
         }
 
-        public LoanTableModel(List<DBManager.LoanData> data, LoanColumns[] hiddenColumns) {
+        public LoanTableModel(List<DBManager.LoanData> data,Map<Integer, String> usernameMap, Map<Integer, String> libraryMap, LoanColumns[] hiddenColumns) {
             this.data=data;
+            this.usernameMap=usernameMap;
+            this.libraryMap=libraryMap;
             List<LoanColumns> remove = Arrays.stream(hiddenColumns).toList();
             List<LoanColumns> remaining = Arrays.stream(LoanColumns.values()).filter(c -> !remove.contains(c)).toList();
             columns = remaining.toArray(new LoanColumns[remaining.size()]);
@@ -166,10 +171,12 @@ public class CommonUI {
             DBManager.LoanData rowData = data.get(row);
             switch (columns[col]) {
                 case USERNAME -> {
-                    return rowData.user_id();
+                    if (usernameMap==null) return rowData.user_id();
+                    return usernameMap.get(rowData.user_id());
                 }
                 case LIBRARY -> {
-                    return rowData.library_id();
+                    if (libraryMap==null) return rowData.library_id();
+                    return libraryMap.get(rowData.library_id());
                 }
                 case BOOK_NAME -> {
                     return rowData.book_name();
@@ -198,16 +205,18 @@ public class CommonUI {
         }
     }
 
-    public static JComponent loansList(List<DBManager.LoanData> list, String header) {
+    public static JComponent loansList(List<DBManager.LoanData> list, String header, Map<Integer,String> usernameMap, Map<Integer,String> libraryMap, LoanColumns[] hiddenColumns) {
         JPanel listPane = new JPanel();
         listPane.setLayout(new BoxLayout(listPane, BoxLayout.PAGE_AXIS));
-        JTable table = new JTable(new LoanTableModel(list));
+        JTable table = new JTable(new LoanTableModel(list, usernameMap, libraryMap, hiddenColumns));
         table.setFillsViewportHeight(true);
         JLabel label = new JLabel(header);
-        label.setLabelFor(table);
+        JScrollPane scrollPane = new JScrollPane(table);
+        label.setLabelFor(scrollPane);
         listPane.add(label);
+        listPane.add(scrollPane);
         listPane.add(Box.createRigidArea(new Dimension(0,5)));
         listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
-        return new JScrollPane(table);
+        return listPane;
     }
 }

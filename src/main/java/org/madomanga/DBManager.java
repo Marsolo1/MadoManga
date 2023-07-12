@@ -376,4 +376,22 @@ public class DBManager {
         }
     }
 
+    public Map<Integer, String> getLibraries() throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(LIB_TABLE)
+                    .all()
+                    .build());
+
+            tx.commit();
+            return res.stream()
+                    .collect(Collectors.toMap(key->key.getInt("library_id"), key->key.getText("library_name")));
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
 }

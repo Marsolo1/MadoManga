@@ -9,6 +9,9 @@ import java.awt.event.KeyEvent;
 import static org.madomanga.CommonUI.newGenericListEntry;
 import static org.madomanga.CommonUI.showGenericList;
 
+import java.util.List;
+import java.util.Map;
+
 public class UserUI {
 
     private DBManager db;
@@ -58,11 +61,20 @@ public class UserUI {
     }
 
     private JComponent loansList() {
+        List<DBManager.LoanData> loans;
+        Map<Integer,String> libraryMap;
         try {
-            return CommonUI.loansList(db.getLoans(), "Current loans: ");
+            loans = db.getLoans().stream().filter(loan->loan.user_id()==userId).toList();
+            libraryMap = db.getLibraries();
         } catch (TransactionException e) {
             throw new RuntimeException(e);
         }
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+        panel.add(CommonUI.loansList(loans.stream().filter(loan->loan.loaned()).toList(), "Current loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS, CommonUI.LoanColumns.RETURN_DATE}));
+        panel.add(new JSeparator(SwingConstants.HORIZONTAL));
+        panel.add(CommonUI.loansList(loans.stream().filter(loan->!loan.loaned()).toList(), "Past loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS}));
+        return panel;
     }
 
     protected JComponent makeTextPanel(String text) {
