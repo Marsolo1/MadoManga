@@ -26,7 +26,7 @@ public class Main {
         JButton userMode = new JButton("User mode");
         userMode.addActionListener(e -> {
             try {
-                showUserList(frame);
+                new UserUI(db).showUserList(frame);
             } catch (TransactionException ex) {
                 throw new RuntimeException(ex);
             }
@@ -82,17 +82,7 @@ public class Main {
         db.close();*/
     }
 
-    private static void showUserList(Frame owner) throws TransactionException {
-        showGenericList(owner, "Select user",db.getUsers(),
-                (i,s) -> System.out.println(s+" ("+i+")"),
-                parent -> newGenericListEntry(parent, "New user", "Please enter user name:", s -> {
-                    try {
-                        return db.create_user(s);
-                    } catch (TransactionException e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
-    }
+
 
 
 }

@@ -1,10 +1,17 @@
 package org.madomanga;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.awt.*;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class CommonUI {
 
@@ -105,5 +112,102 @@ public class CommonUI {
         if (s==null || s.equals(""))
             return null;
         return new NameIdCell(addMethod.apply(s), s);
+    }
+
+    // Used for the loans list
+    public enum LoanColumns{
+        USERNAME,
+        LIBRARY,
+        BOOK_NAME,
+        CHAPTER,
+        START_DATE,
+        LIMIT_DATE,
+        RETURN_DATE,
+        LOAN_STATUS
+    }
+
+    private static class LoanTableModel extends AbstractTableModel {
+        private List<DBManager.LoanData> data;
+        private LoanColumns[] columns;
+        private static final Map<LoanColumns,String> columnNames = Stream.of(new Object[][]{
+                {LoanColumns.USERNAME, "User"},
+                {LoanColumns.LIBRARY, "Library"},
+                {LoanColumns.BOOK_NAME, "Book name"},
+                {LoanColumns.CHAPTER, "Chapter"},
+                {LoanColumns.START_DATE, "Start date"},
+                {LoanColumns.LIMIT_DATE, "Limit date"},
+                {LoanColumns.RETURN_DATE, "Return date"},
+                {LoanColumns.LOAN_STATUS, "Currently loaned"}
+        }).collect(Collectors.toMap(data->(LoanColumns)data[0], data->(String)data[1]));
+
+        public LoanTableModel(List<DBManager.LoanData> data) {
+            this(data, new LoanColumns[0]);
+        }
+
+        public LoanTableModel(List<DBManager.LoanData> data, LoanColumns[] hiddenColumns) {
+            this.data=data;
+            List<LoanColumns> remove = Arrays.stream(hiddenColumns).toList();
+            List<LoanColumns> remaining = Arrays.stream(LoanColumns.values()).filter(c -> !remove.contains(c)).toList();
+            columns = remaining.toArray(new LoanColumns[remaining.size()]);
+        }
+
+        @Override
+        public int getRowCount() {
+            return data.size()  ;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return columns.length;
+        }
+
+        @Override
+        public Object getValueAt(int row, int col) {
+            DBManager.LoanData rowData = data.get(row);
+            switch (columns[col]) {
+                case USERNAME -> {
+                    return rowData.user_id();
+                }
+                case LIBRARY -> {
+                    return rowData.library_id();
+                }
+                case BOOK_NAME -> {
+                    return rowData.book_name();
+                }
+                case CHAPTER -> {
+                    return rowData.chapter();
+                }
+                case START_DATE -> {
+                    return rowData.start_date();
+                }
+                case LIMIT_DATE -> {
+                    return rowData.limit_date();
+                }
+                case RETURN_DATE -> {
+                    return rowData.return_date();
+                }
+                case LOAN_STATUS -> {
+                    return rowData.loaned();
+                }
+            }
+            return null;
+        }
+        @Override
+        public String getColumnName(int col) {
+            return columnNames.get(columns[col]);
+        }
+    }
+
+    public static JComponent loansList(List<DBManager.LoanData> list, String header) {
+        JPanel listPane = new JPanel();
+        listPane.setLayout(new BoxLayout(listPane, BoxLayout.PAGE_AXIS));
+        JTable table = new JTable(new LoanTableModel(list));
+        table.setFillsViewportHeight(true);
+        JLabel label = new JLabel(header);
+        label.setLabelFor(table);
+        listPane.add(label);
+        listPane.add(Box.createRigidArea(new Dimension(0,5)));
+        listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
+        return new JScrollPane(table);
     }
 }

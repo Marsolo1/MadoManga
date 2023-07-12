@@ -34,6 +34,9 @@ public class DBManager {
     public record LoanData(
             int user_id,
             int loan_id,
+            int library_id,
+            String book_name,
+            int chapter,
             String start_date,
             String limit_date,
             String return_date,
@@ -337,6 +340,9 @@ public class DBManager {
                     .map(record -> new LoanData(
                             record.getInt("user_id"),
                             record.getInt("loan_id"),
+                            record.getInt("library_id"),
+                            record.getText("book_name"),
+                            record.getInt("chapter"),
                             record.getText("start_date"),
                             record.getText("limit_date"),
                             record.getText("return_date"),
