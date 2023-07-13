@@ -1,5 +1,7 @@
 package org.madomanga;
 
+import com.scalar.db.exception.transaction.TransactionException;
+
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;

@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.List;
 
 import static org.madomanga.CommonUI.*;
 
@@ -134,7 +135,6 @@ public class LibraryUI {
 
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
         frame.setVisible(true);
-    }
         tabbedPane.addTab("Books", null, bookList(),
                 "Display current books of the library");
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
