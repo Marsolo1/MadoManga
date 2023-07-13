@@ -218,6 +218,7 @@ public class CommonUI {
         listPane.setLayout(new BoxLayout(listPane, BoxLayout.PAGE_AXIS));
         JTable table = new JTable(new LoanTableModel(list, usernameMap, libraryMap, hiddenColumns));
         table.setFillsViewportHeight(true);
+        table.setAutoCreateRowSorter(true);
         JLabel label = new JLabel(header);
         JScrollPane scrollPane = new JScrollPane(table);
         label.setLabelFor(scrollPane);
