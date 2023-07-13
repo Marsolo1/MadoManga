@@ -286,6 +286,7 @@ public class CommonUI {
         detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.PAGE_AXIS));
         JLabel detailsBookName = new JLabel();
         JTextArea detailsSummary = new JTextArea();
+        JScrollPane detailsScroll = new JScrollPane(detailsSummary);
         detailsSummary.setEditable(false);
         detailsSummary.setLineWrap(true);
         DefaultMutableTreeNode root = new DefaultMutableTreeNode();
@@ -294,7 +295,7 @@ public class CommonUI {
         JScrollPane chaptersScroll = new JScrollPane(chaptersList);
         chaptersList.setRootVisible(false);
         detailsPanel.add(detailsBookName);
-        detailsPanel.add(detailsSummary);
+        detailsPanel.add(detailsScroll);
         detailsPanel.add(chaptersScroll);
         detailsPanel.setVisible(false);
 
