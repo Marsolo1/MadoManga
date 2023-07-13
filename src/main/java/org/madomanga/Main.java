@@ -9,6 +9,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 
+import org.madomanga.DBManager.BookData;
+import org.madomanga.DBManager.LoanData;
 import static org.madomanga.CommonUI.*;
 
 public class Main {
@@ -23,6 +25,13 @@ public class Main {
         frame.setSize(600,300);
         JPanel panel = new JPanel();
         JButton libraryMode = new JButton("Library mode");
+        libraryMode.addActionListener(e -> {
+            try {
+                new LibraryUI(db).showLibraryList(frame);
+            } catch (TransactionException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         JButton userMode = new JButton("User mode");
         userMode.addActionListener(e -> {
             try {
@@ -53,7 +62,6 @@ public class Main {
                 db.close();
             }
         });
-
         /*
         db.create_library("Animate", 10);
         db.create_book(new BookData("One Piece", "Eiichiro Oda", "Shonen", "blabla"));

@@ -394,4 +394,27 @@ public class DBManager {
         }
     }
 
+    public List<BookData> getLibraryBooks(int library_id) throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            List<Result> res = tx.scan(Scan.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(BOOKS_AVAILABLE)
+                    .partitionKey(Key.ofInt("library_id", library_id))
+                    .build());
+
+            tx.commit();
+            return res.stream()
+                    .map(record -> new BookData(
+                            record.getText("book_name"),
+                            record.getText("author"),
+                            record.getText("genre"),
+                            record.getText("summary")
+                    ))
+                    .toList();
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
 }

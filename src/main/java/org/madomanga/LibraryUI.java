@@ -84,29 +84,39 @@ public class LibraryUI {
     private DBManager db;
     private int libraryId;
     private String libraryName;
-    public LibraryUI(DBManager db) {
+
+    public LibraryUI(DBManager db){
         this.db=db;
     }
 
-    public void showLibraryList(JFrame owner) throws TransactionException {
-        showGenericList(owner, "Select user",db.getLibraries(),
+    public void showLibraryList(Frame owner) throws TransactionException {
+        showGenericList(owner, "Select library",db.getLibraries(),
                 (i,s) -> {
                     try {
-                        libraryId=i;
-                        libraryName=s;
+                        libraryId = i;
+                        libraryName = s;
                         showLibraryMainInterface();
                     } catch (TransactionException e) {
                         throw new RuntimeException(e);
                     }
                 },
-                parent -> newGenericListEntry(parent, "STOP", "THIS IS VERY WIP PLEASE CLOSE THIS AND STOP", s -> {
-                    try {
-                        return "I SAID STOP";
-                    } catch (TransactionException e) {
-                        throw new RuntimeException(e);
-                    }
-                }));
-
+                parent -> newGenericListEntry(parent, "New library", "Please enter library name",
+                        (s) -> {
+                            try {
+                                int i = Integer.parseInt((String)JOptionPane.showInputDialog(
+                                        parent,
+                                        "Please enter return delay (days)",
+                                        "Return delay",
+                                        JOptionPane.PLAIN_MESSAGE,
+                                        null,
+                                        null,
+                                        null));
+                                return db.create_library(s, i);
+                            } catch (TransactionException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+        );
     }
 
     private void showLibraryMainInterface() throws TransactionException {
@@ -124,5 +134,40 @@ public class LibraryUI {
 
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
         frame.setVisible(true);
+    }
+        tabbedPane.addTab("Books", null, bookList(),
+                "Display current books of the library");
+        tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
+
+        frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
+        frame.setVisible(true);
+    }
+
+    private JComponent bookList() {
+        List<String> books;
+        try {
+            books = db.getBooks().stream().filter(b -> {
+                try {
+                    return !db.getBookAvailability(b).get(libraryId).isEmpty();
+                } catch (TransactionException e) {
+                    throw new RuntimeException(e);
+                }
+            }).toList();
+        } catch (TransactionException e) {
+            throw new RuntimeException(e);
+        }
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
+        panel.add(CommonUI.booksList(books, "Available books", null));
+        return panel;
+    }
+
+    protected JComponent makeTextPanel(String text) {
+        JPanel panel = new JPanel(false);
+        JLabel filler = new JLabel(text);
+        filler.setHorizontalAlignment(JLabel.CENTER);
+        panel.setLayout(new GridLayout(1, 1));
+        panel.add(filler);
+        return panel;
     }
 }
