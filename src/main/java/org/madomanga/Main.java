@@ -31,6 +31,13 @@ public class Main {
                 throw new RuntimeException(ex);
             }
         });
+        userMode.addActionListener(e -> {
+            try {
+                new LibraryUI(db).showLibraryList(frame);
+            } catch (TransactionException ex) {
+                throw new RuntimeException(ex);
+            }
+        });
         panel.add(libraryMode);
         panel.add(userMode);
         frame.getContentPane().add(BorderLayout.CENTER, panel);

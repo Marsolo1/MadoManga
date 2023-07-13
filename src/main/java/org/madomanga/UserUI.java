@@ -6,11 +6,10 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
-import static org.madomanga.CommonUI.newGenericListEntry;
-import static org.madomanga.CommonUI.showGenericList;
-
 import java.util.List;
 import java.util.Map;
+
+import static org.madomanga.CommonUI.*;
 
 public class UserUI {
 
@@ -51,8 +50,7 @@ public class UserUI {
                 "Display current and past loans for the current user");
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
-        JComponent panel2 = makeTextPanel("Panel #2");
-        tabbedPane.addTab("Search book", null, panel2,
+        tabbedPane.addTab("Search book", null, booksList(-1,db),
                 "Search books in all libraries");
         tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 
@@ -77,12 +75,4 @@ public class UserUI {
         return panel;
     }
 
-    protected JComponent makeTextPanel(String text) {
-        JPanel panel = new JPanel(false);
-        JLabel filler = new JLabel(text);
-        filler.setHorizontalAlignment(JLabel.CENTER);
-        panel.setLayout(new GridLayout(1, 1));
-        panel.add(filler);
-        return panel;
-    }
 }

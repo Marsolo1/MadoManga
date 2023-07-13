@@ -1,7 +1,11 @@
 package org.madomanga;
 
+import com.scalar.db.exception.transaction.TransactionException;
+
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -218,5 +222,96 @@ public class CommonUI {
         listPane.add(Box.createRigidArea(new Dimension(0,5)));
         listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
         return listPane;
+    }
+
+    public static JComponent booksList(int libraryFilter, DBManager db) {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
+
+        // Books list
+        JPanel booksPanel = new JPanel();
+        booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.PAGE_AXIS));
+        DefaultListModel listModel = new DefaultListModel();
+        try {
+            listModel.addAll(db.getBooks());
+        } catch (TransactionException e) {
+            throw new RuntimeException(e);
+        }
+        JList booksList = new JList(listModel);
+        booksList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        booksList.setLayoutOrientation(JList.VERTICAL);
+        booksList.setVisibleRowCount(-1);
+        JScrollPane booksListScroller = new JScrollPane(booksList);
+        booksListScroller.setPreferredSize(new Dimension(250, 80));
+        JLabel labelBooks = new JLabel("Books:");
+        labelBooks.setLabelFor(booksListScroller);
+        booksPanel.add(labelBooks);
+        booksPanel.add(booksListScroller);
+        if (libraryFilter!=-1) {
+            JButton addBook = new JButton("Add new book");
+            addBook.addActionListener(e -> LibraryUI.addBookDialog((JFrame) SwingUtilities.getRoot(panel), libraryFilter, db));
+            booksPanel.add(addBook);
+        }
+
+
+
+        // Details panel
+        JPanel detailsPanel = new JPanel();
+        detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.PAGE_AXIS));
+        JLabel detailsBookName = new JLabel();
+        JTextArea detailsSummary = new JTextArea();
+        detailsSummary.setEditable(false);
+        detailsSummary.setLineWrap(true);
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+        DefaultTreeModel chaptersModel = new DefaultTreeModel(root);
+        JTree chaptersList = new JTree(chaptersModel);
+        JScrollPane chaptersScroll = new JScrollPane(chaptersList);
+        chaptersList.setRootVisible(false);
+        detailsPanel.add(detailsBookName);
+        detailsPanel.add(detailsSummary);
+        detailsPanel.add(chaptersScroll);
+        detailsPanel.setVisible(false);
+
+
+        // When we click on a book, we load its details
+        booksList.addListSelectionListener(e -> {
+            String name = (String)((JList)e.getSource()).getSelectedValue();
+            if (name==null) {
+                detailsPanel.setVisible(false);
+            }
+            DBManager.BookData data;
+            Map<Integer,Map<Integer,Integer>> availability;
+            Map<Integer,String> libraryNames;
+            try {
+                data = db.getBookData(name);
+                availability = db.getBookAvailability(name);
+                libraryNames = db.getLibraries();
+            } catch (TransactionException ex) {
+                throw new RuntimeException(ex);
+            }
+            detailsBookName.setText(data.name() + " ["+data.genre()+"] - "+data.author());
+            detailsSummary.setText(data.summary());
+            chaptersModel.setRoot(buildChapterTree(availability,libraryNames));
+            for (int i = 0; i < chaptersList.getRowCount(); i++) {
+                chaptersList.expandRow(i);
+            }
+            detailsPanel.setVisible(true);
+        });
+
+        panel.add(booksPanel);
+        panel.add(detailsPanel);
+        return panel;
+
+    }
+    private static DefaultMutableTreeNode buildChapterTree(Map<Integer, Map<Integer,Integer>> availability, Map<Integer,String> libraryNames) {
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode();
+        for (int libId : availability.keySet()) {
+            DefaultMutableTreeNode libraryNode = new DefaultMutableTreeNode(libraryNames.get(libId));
+            root.add(libraryNode);
+            for (Map.Entry<Integer,Integer> line: availability.get(libId).entrySet()) {
+                libraryNode.add(new DefaultMutableTreeNode("Chapter "+line.getKey()+" - "+line.getValue()+" available"));
+            }
+        }
+        return root;
     }
 }
