@@ -12,8 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -209,7 +212,8 @@ public class CommonUI {
         }
     }
 
-    public static JComponent loansList(List<DBManager.LoanData> list, String header, Map<Integer,String> usernameMap, Map<Integer,String> libraryMap, LoanColumns[] hiddenColumns) {
+    // TODO: Change the way this function works: we should connect to the database and dynamically update the content (like booksList)
+    public static JComponent loansList(List<DBManager.LoanData> list, String header, Map<Integer,String> usernameMap, Map<Integer,String> libraryMap, LoanColumns[] hiddenColumns, Consumer<DBManager.LoanData> onReturn) {
         JPanel listPane = new JPanel();
         listPane.setLayout(new BoxLayout(listPane, BoxLayout.PAGE_AXIS));
         JTable table = new JTable(new LoanTableModel(list, usernameMap, libraryMap, hiddenColumns));
@@ -219,12 +223,18 @@ public class CommonUI {
         label.setLabelFor(scrollPane);
         listPane.add(label);
         listPane.add(scrollPane);
+        if (onReturn!=null) {
+            JButton returnBtn = new JButton("Return book");
+            returnBtn.addActionListener(e->onReturn.accept(list.get(table.getSelectedRow())));
+            listPane.add(returnBtn);
+        }
         listPane.add(Box.createRigidArea(new Dimension(0,5)));
         listPane.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
         return listPane;
     }
 
     public static JComponent booksList(int libraryFilter, DBManager db) {
+        // TODO: Makes the library filter work
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
 
@@ -233,7 +243,15 @@ public class CommonUI {
         booksPanel.setLayout(new BoxLayout(booksPanel, BoxLayout.PAGE_AXIS));
         DefaultListModel listModel = new DefaultListModel();
         try {
-            listModel.addAll(db.getBooks());
+            List<String> books = db.getBooks();
+            books.stream().filter(b-> {
+                try {
+                    return !db.getBookAvailability(b).get(libraryFilter).isEmpty();
+                } catch (TransactionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            listModel.addAll(books);
         } catch (TransactionException e) {
             throw new RuntimeException(e);
         }
@@ -247,9 +265,17 @@ public class CommonUI {
         labelBooks.setLabelFor(booksListScroller);
         booksPanel.add(labelBooks);
         booksPanel.add(booksListScroller);
+
         if (libraryFilter!=-1) {
             JButton addBook = new JButton("Add new book");
-            addBook.addActionListener(e -> LibraryUI.addBookDialog((JFrame) SwingUtilities.getRoot(panel), libraryFilter, db));
+            addBook.addActionListener(e -> {
+                DBManager.BookData data = LibraryUI.addBookDialog((JFrame) SwingUtilities.getRoot(panel), libraryFilter, db);
+                if (data!=null) {
+                    listModel.addElement(data.name());
+                    booksList.setSelectedValue(data.name(), true);
+                } else
+                    booksList.clearSelection();
+            });
             booksPanel.add(addBook);
         }
 
@@ -271,6 +297,40 @@ public class CommonUI {
         detailsPanel.add(detailsSummary);
         detailsPanel.add(chaptersScroll);
         detailsPanel.setVisible(false);
+
+        if (libraryFilter!=-1) {
+            // TODO: Make the button non clickable until we click on a chapter
+            JButton startLoan = new JButton("Start loan");
+            startLoan.addActionListener(event -> {
+                try {
+                    CommonUI.showGenericList( (JFrame)SwingUtilities.getRoot(panel), "Select user", db.getUsers(),
+                            (i,s) -> {
+                                try {
+                                    String chapterText = (String)((DefaultMutableTreeNode)chaptersList.getSelectionPath().getLastPathComponent()).getUserObject();
+                                    Pattern pattern = Pattern.compile("Chapter (\\d+)"); // TODO: Use a better method, maybe?
+                                    Matcher matcher = pattern.matcher(chapterText);
+                                    if (matcher.find()) {
+                                        // TODO Calculate the dates
+                                        db.create_loan(i, libraryFilter, (String) booksList.getSelectedValue(), Integer.parseInt(matcher.group(1)), "2023-07-13", "2023-07-20");
+                                    }
+
+                                } catch (Exception e) {
+                                    throw new RuntimeException(e);
+                                }
+                            },
+                            parent -> newGenericListEntry(parent, "New user", "Please enter user name:", s -> {
+                                try {
+                                    return db.create_user(s);
+                                } catch (TransactionException e) {
+                                    throw new RuntimeException(e);
+                                }
+                            }));
+                } catch (TransactionException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            detailsPanel.add(startLoan);
+        }
 
 
         // When we click on a book, we load its details
@@ -297,6 +357,8 @@ public class CommonUI {
             }
             detailsPanel.setVisible(true);
         });
+
+
 
         panel.add(booksPanel);
         panel.add(detailsPanel);

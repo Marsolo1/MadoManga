@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
+import java.util.function.Consumer;
 
 import static org.madomanga.CommonUI.*;
 
@@ -120,54 +121,39 @@ public class LibraryUI {
         );
     }
 
+
     private void showLibraryMainInterface() throws TransactionException {
         JFrame frame = new JFrame("MadoManga: Library mode ("+libraryName+")");
         frame.setSize(700,500);
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        /*tabbedPane.addTab("My loans", null, loansList(),
-                "Display current and past loans for the current user");
-        tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
-
-        tabbedPane.addTab("Search book", null, booksList(-1,db),
-                "Search books in all libraries");
-        tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);*/
-
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
         frame.setVisible(true);
-        tabbedPane.addTab("Books", null, bookList(),
+        tabbedPane.addTab("Books", null, CommonUI.booksList(libraryId, db),
                 "Display current books of the library");
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
+        // TODO: Replace this... thing with a better way of updating, see the todo in CommonUI
+        class ReturnBook implements Consumer<DBManager.LoanData> {
+
+            @Override
+            public void accept(DBManager.LoanData loanData) {
+                try {
+                    // TODO: Change hardcoded date
+                    db.end_loan(loanData.user_id(), loanData.loan_id(), "2023-07-13");
+                    tabbedPane.setComponentAt(1, CommonUI.loansList(db.getLoans().stream().filter(loan->loan.library_id()==libraryId).toList(), "Loans", db.getUsers(), null, new CommonUI.LoanColumns[] {LoanColumns.LIBRARY},this));
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        tabbedPane.addTab("Loans", null, CommonUI.loansList(db.getLoans().stream().filter(loan->loan.library_id()==libraryId).toList(), "Loans", db.getUsers(), null, new CommonUI.LoanColumns[] {LoanColumns.LIBRARY}, new ReturnBook()));
+        tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
+
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
         frame.setVisible(true);
     }
 
-    private JComponent bookList() {
-        List<String> books;
-        try {
-            books = db.getBooks().stream().filter(b -> {
-                try {
-                    return !db.getBookAvailability(b).get(libraryId).isEmpty();
-                } catch (TransactionException e) {
-                    throw new RuntimeException(e);
-                }
-            }).toList();
-        } catch (TransactionException e) {
-            throw new RuntimeException(e);
-        }
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
-        panel.add(CommonUI.booksList(books, "Available books", null));
-        return panel;
-    }
 
-    protected JComponent makeTextPanel(String text) {
-        JPanel panel = new JPanel(false);
-        JLabel filler = new JLabel(text);
-        filler.setHorizontalAlignment(JLabel.CENTER);
-        panel.setLayout(new GridLayout(1, 1));
-        panel.add(filler);
-        return panel;
-    }
 }

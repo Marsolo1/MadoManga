@@ -69,9 +69,9 @@ public class UserUI {
         }
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.PAGE_AXIS));
-        panel.add(CommonUI.loansList(loans.stream().filter(loan->loan.loaned()).toList(), "Current loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS, CommonUI.LoanColumns.RETURN_DATE}));
+        panel.add(CommonUI.loansList(loans.stream().filter(loan->loan.loaned()).toList(), "Current loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS, CommonUI.LoanColumns.RETURN_DATE}, null));
         panel.add(new JSeparator(SwingConstants.HORIZONTAL));
-        panel.add(CommonUI.loansList(loans.stream().filter(loan->!loan.loaned()).toList(), "Past loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS}));
+        panel.add(CommonUI.loansList(loans.stream().filter(loan->!loan.loaned()).toList(), "Past loans:", null, libraryMap, new CommonUI.LoanColumns[]{CommonUI.LoanColumns.USERNAME, CommonUI.LoanColumns.LOAN_STATUS}, null));
         return panel;
     }
 
