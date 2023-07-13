@@ -358,7 +358,11 @@ public class CommonUI {
             detailsPanel.setVisible(true);
         });
 
+        booksPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        booksPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
+        detailsPanel.add(Box.createRigidArea(new Dimension(0,5)));
+        detailsPanel.setBorder(BorderFactory.createEmptyBorder(10,10,10,10));
 
         panel.add(booksPanel);
         panel.add(detailsPanel);
