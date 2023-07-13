@@ -43,7 +43,7 @@ public class UserUI {
 
     private void showUserMainInterface() throws TransactionException {
         JFrame frame = new JFrame("MadoManga: User mode ("+userName+")");
-        frame.setSize(700,500);
+        frame.setSize(900,700);
         JTabbedPane tabbedPane = new JTabbedPane();
 
         tabbedPane.addTab("My loans", null, loansList(),

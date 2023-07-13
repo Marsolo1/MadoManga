@@ -124,7 +124,7 @@ public class LibraryUI {
 
     private void showLibraryMainInterface() throws TransactionException {
         JFrame frame = new JFrame("MadoManga: Library mode ("+libraryName+")");
-        frame.setSize(700,500);
+        frame.setSize(900,700);
         JTabbedPane tabbedPane = new JTabbedPane();
 
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
