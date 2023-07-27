@@ -3,8 +3,13 @@ package org.madomanga;
 import com.scalar.db.exception.transaction.TransactionException;
 
 import javax.swing.*;
+
+import org.madomanga.CommonUI.LoanColumns;
+
 import java.awt.*;
 import java.awt.event.*;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
 import java.util.function.Consumer;
@@ -13,7 +18,7 @@ import static org.madomanga.CommonUI.*;
 
 public class LibraryUI {
     public static DBManager.BookData addBookDialog(JFrame owner, int library, DBManager db) {
-        AtomicBoolean newBook= new AtomicBoolean(true);
+        AtomicBoolean newBook = new AtomicBoolean(true);
         JTextField bookName = new JTextField();
         JTextField author = new JTextField();
         JTextField genre = new JTextField();
@@ -59,7 +64,7 @@ public class LibraryUI {
             }
         });
 
-        int result = JOptionPane.showConfirmDialog(owner, new Object[]{
+        int result = JOptionPane.showConfirmDialog(owner, new Object[] {
                 "Book name", bookName,
                 "Author", author,
                 "Genre", genre,
@@ -69,12 +74,14 @@ public class LibraryUI {
         }, "New book", JOptionPane.OK_CANCEL_OPTION);
         try {
             if (result == JOptionPane.OK_OPTION) {
-                DBManager.BookData data=null;
+                DBManager.BookData data = null;
                 if (newBook.get()) {
-                    data= new DBManager.BookData(bookName.getText(), author.getText(), genre.getText(), summary.getText());
+                    data = new DBManager.BookData(bookName.getText(), author.getText(), genre.getText(),
+                            summary.getText());
                     db.create_book(data);
                 }
-                db.add_books_available(library, bookName.getText(), (int)chapter.getValue(), (int)quantity.getValue());
+                db.add_books_available(library, bookName.getText(), (int) chapter.getValue(),
+                        (int) quantity.getValue());
                 return data;
             }
         } catch (TransactionException ex) {
@@ -87,13 +94,13 @@ public class LibraryUI {
     private int libraryId;
     private String libraryName;
 
-    public LibraryUI(DBManager db){
-        this.db=db;
+    public LibraryUI(DBManager db) {
+        this.db = db;
     }
 
     public void showLibraryList(Frame owner) throws TransactionException {
-        showGenericList(owner, "Select library",db.getLibraries(),
-                (i,s) -> {
+        showGenericList(owner, "Select library", db.getLibraries(),
+                (i, s) -> {
                     try {
                         libraryId = i;
                         libraryName = s;
@@ -105,7 +112,7 @@ public class LibraryUI {
                 parent -> newGenericListEntry(parent, "New library", "Please enter library name",
                         (s) -> {
                             try {
-                                int i = Integer.parseInt((String)JOptionPane.showInputDialog(
+                                int i = Integer.parseInt((String) JOptionPane.showInputDialog(
                                         parent,
                                         "Please enter return delay (days)",
                                         "Return delay",
@@ -117,14 +124,12 @@ public class LibraryUI {
                             } catch (TransactionException e) {
                                 throw new RuntimeException(e);
                             }
-                        })
-        );
+                        }));
     }
 
-
     private void showLibraryMainInterface() throws TransactionException {
-        JFrame frame = new JFrame("MadoManga: Library mode ("+libraryName+")");
-        frame.setSize(900,700);
+        JFrame frame = new JFrame("MadoManga: Library mode (" + libraryName + ")");
+        frame.setSize(900, 700);
         JTabbedPane tabbedPane = new JTabbedPane();
 
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
@@ -133,27 +138,33 @@ public class LibraryUI {
                 "Display current books of the library");
         tabbedPane.setMnemonicAt(0, KeyEvent.VK_1);
 
-        // TODO: Replace this... thing with a better way of updating, see the todo in CommonUI
+        // TODO: Replace this... thing with a better way of updating, see the todo in
+        // CommonUI
         class ReturnBook implements Consumer<DBManager.LoanData> {
 
             @Override
             public void accept(DBManager.LoanData loanData) {
                 try {
-                    // TODO: Change hardcoded date
-                    db.end_loan(loanData.user_id(), loanData.loan_id(), "2023-07-13");
-                    tabbedPane.setComponentAt(1, CommonUI.loansList(db.getLoans().stream().filter(loan->loan.library_id()==libraryId).toList(), "Loans", db.getUsers(), null, new CommonUI.LoanColumns[] {LoanColumns.LIBRARY},this));
+                    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                    LocalDateTime now = LocalDateTime.now();
+                    db.end_loan(loanData.user_id(), loanData.loan_id(), dtf.format(now).toString());
+                    tabbedPane.setComponentAt(1, CommonUI.loansList(
+                            db.getLoans().stream().filter(loan -> loan.library_id() == libraryId).toList(), "Loans",
+                            db.getUsers(), null, new CommonUI.LoanColumns[] { LoanColumns.LIBRARY }, this));
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
             }
         }
 
-        tabbedPane.addTab("Loans", null, CommonUI.loansList(db.getLoans().stream().filter(loan->loan.library_id()==libraryId).toList(), "Loans", db.getUsers(), null, new CommonUI.LoanColumns[] {LoanColumns.LIBRARY}, new ReturnBook()));
+        tabbedPane.addTab("Loans", null,
+                CommonUI.loansList(db.getLoans().stream().filter(loan -> loan.library_id() == libraryId).toList(),
+                        "Loans", db.getUsers(), null, new CommonUI.LoanColumns[] { LoanColumns.LIBRARY },
+                        new ReturnBook()));
         tabbedPane.setMnemonicAt(1, KeyEvent.VK_2);
 
         frame.getContentPane().add(BorderLayout.CENTER, tabbedPane);
         frame.setVisible(true);
     }
-
 
 }

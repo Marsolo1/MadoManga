@@ -7,9 +7,10 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -312,8 +313,12 @@ public class CommonUI {
                                     Pattern pattern = Pattern.compile("Chapter (\\d+)"); // TODO: Use a better method, maybe?
                                     Matcher matcher = pattern.matcher(chapterText);
                                     if (matcher.find()) {
-                                        // TODO Calculate the dates
-                                        db.create_loan(i, libraryFilter, (String) booksList.getSelectedValue(), Integer.parseInt(matcher.group(1)), "2023-07-13", "2023-07-20");
+                                        DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+                                        LocalDateTime now = LocalDateTime.now();
+                                        Calendar c = Calendar.getInstance();
+                                        c.setTime(java.sql.Date.valueOf(now.toLocalDate()));
+                                        c.add(Calendar.DATE, db.getDelay(libraryFilter));
+                                        db.create_loan(i, libraryFilter, (String) booksList.getSelectedValue(), Integer.parseInt(matcher.group(1)), dtf.format(now).toString(), dtf.format(c.getTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()));
                                     }
 
                                 } catch (Exception e) {

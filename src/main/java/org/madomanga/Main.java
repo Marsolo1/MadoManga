@@ -55,7 +55,7 @@ public class Main {
                 db.close();
             }
         });
-        /*
+
         db.create_library("Animate", 10);
         db.create_book(new BookData("One Piece", "Eiichiro Oda", "Shonen", "blabla"));
         db.create_book(new BookData("Berserk", "Kentaro Miura", "Seinen", "blabla"));
@@ -87,7 +87,7 @@ public class Main {
         for (LoanData l : db.getLoans())
             System.out.println(l);
 
-        db.close();*/
+        db.close();
     }
 
 

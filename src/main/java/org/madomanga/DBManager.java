@@ -358,6 +358,23 @@ public class DBManager {
         }
     }
 
+    public int getDelay(int library_id) throws TransactionException {
+        DistributedTransaction tx = manager.start();
+        try {
+            Optional<Result> res = tx.get(Get.newBuilder()
+                    .namespace(LIB_NAMESPACE)
+                    .table(LIB_TABLE)
+                    .partitionKey(Key.ofInt("library_id", library_id))
+                    .build());
+
+            tx.commit();
+            return res.get().getInt("return_delay");
+        } catch (Exception e) {
+            tx.abort();
+            throw e;
+        }
+    }
+
     public Map<Integer, String> getUsers() throws TransactionException {
         DistributedTransaction tx = manager.start();
         try {
